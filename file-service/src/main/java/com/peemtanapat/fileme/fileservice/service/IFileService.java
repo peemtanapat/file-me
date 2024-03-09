@@ -11,5 +11,5 @@ public interface IFileService {
     void uploadFile(MultipartFile file, String owner);
     Resource downloadFile(String fileId, String owner);
     List<FileMetadata> getFiles(String owner);
-    FileMetadata deleteFile(String fileId);
+    FileMetadata deleteFile(String fileId, String owner);
 }

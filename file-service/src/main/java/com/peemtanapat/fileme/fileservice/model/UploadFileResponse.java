@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class UploadFileResponse {
+public class UploadFileResponse extends BaseResponse {
 
     private String filename;
 

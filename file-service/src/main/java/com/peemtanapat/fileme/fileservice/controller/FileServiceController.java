@@ -1,10 +1,10 @@
 package com.peemtanapat.fileme.fileservice.controller;
 
 import com.peemtanapat.fileme.fileservice.Constant;
-import com.peemtanapat.fileme.fileservice.model.FileMetadata;
-import com.peemtanapat.fileme.fileservice.model.UploadFileResponse;
+import com.peemtanapat.fileme.fileservice.model.*;
 import com.peemtanapat.fileme.fileservice.service.FileService;
 import com.peemtanapat.fileme.fileservice.service.MailSenderAdapter;
+import com.peemtanapat.fileme.fileservice.util.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -23,6 +23,7 @@ public class FileServiceController {
 
     private final FileService fileService;
     private final MailSenderAdapter mailSenderAdapter;
+    private JWTUtil jwtUtil = new JWTUtil();
 
     @Autowired
     public FileServiceController(FileService fileService, MailSenderAdapter mailSenderAdapter) {
@@ -30,34 +31,44 @@ public class FileServiceController {
         this.mailSenderAdapter = mailSenderAdapter;
     }
 
-    @GetMapping(produces = "application/json")
-    @ResponseBody
-    public ResponseEntity<List<FileMetadata>> getAllFiles() {
-        System.out.println(System.getenv("upload.path") + "${upload.path}");
-        // TODO: Extract $email from JWT
-        String extractEmail = Constant.CURRENT_OWNER;
-        List<FileMetadata> files = fileService.getFiles(extractEmail);
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<BaseResponse> getAllFiles(
+            @RequestHeader(name = HttpHeaders.AUTHORIZATION) String token) {
+        String username = jwtUtil.getUsernameFromToken(token);
+        if (username == null) {
+            return new ResponseEntity<>(new BaseResponse(Constant.INVALID_TOKEN_MSG),
+                    HttpStatus.UNAUTHORIZED);
+        }
 
-        return new ResponseEntity<>(files, HttpStatus.OK);
+        List<FileMetadata> files = fileService.getFiles(username);
+
+        return new ResponseEntity<>(new GetAllFilesResponse(files), HttpStatus.OK);
     }
 
-    @PostMapping(value = "/upload", consumes =
-            { MediaType.MULTIPART_FORM_DATA_VALUE, "multipart/form-data;charset=UTF-8" })
-    public ResponseEntity<Object> uploadFile(@RequestParam("file") MultipartFile file) {
-        // TODO: Extract $email from JWT
-        String extractEmail = Constant.CURRENT_OWNER;
-        System.out.println("✅uploaded: " + file.getOriginalFilename());
-        fileService.uploadFile(file, extractEmail);
+    @PostMapping(value = "/upload", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    public ResponseEntity<BaseResponse> uploadFile(@RequestHeader(name = HttpHeaders.AUTHORIZATION) String token,
+            @RequestParam("file") MultipartFile file) {
+        String username = jwtUtil.getUsernameFromToken(token);
+        if (username == null) {
+            return new ResponseEntity<>(new BaseResponse(Constant.INVALID_TOKEN_MSG),
+                    HttpStatus.UNAUTHORIZED);
+        }
 
-        mailSenderAdapter.notifyUploadFileSuccess("tanapat.pm@gmail.com", file.getOriginalFilename());
+        fileService.uploadFile(file, username);
+
+        mailSenderAdapter.notifyUploadFileSuccess(username, file.getOriginalFilename());
 
         return new ResponseEntity<>(new UploadFileResponse(file.getOriginalFilename()), HttpStatus.OK);
     }
 
-    @GetMapping(value = "/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE) //"application/octet-stream"
-    public ResponseEntity<Resource> downloadFile(@RequestParam("fileId") String fileId) {
-        // TODO: Extract $email from JWT
-        System.out.println("✅downloading fileId: " + fileId);
+    @GetMapping(value = "/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public ResponseEntity<Resource> downloadFile(@RequestParam("token") String token,
+            @RequestParam("fileId") String fileId) {
+        String username = jwtUtil.getUsernameFromToken(token);
+        if (username == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
         Resource resource = fileService.downloadFile(fileId, Constant.CURRENT_OWNER);
 
         HttpHeaders header = new HttpHeaders();
@@ -69,12 +80,17 @@ public class FileServiceController {
         return new ResponseEntity<>(resource, header, HttpStatus.OK);
     }
 
-    @DeleteMapping(value = "/delete", produces = "application/json")
-    public ResponseEntity<FileMetadata> deleteFile(@RequestParam("fileId") String fileId) {
-        System.out.println("✅deleting fileId: " + fileId);
+    @DeleteMapping(value = "/delete", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<BaseResponse> deleteFile(@RequestHeader(name = HttpHeaders.AUTHORIZATION) String token,
+            @RequestParam("fileId") String fileId) {
+        String username = jwtUtil.getUsernameFromToken(token);
+        if (username == null) {
+            return new ResponseEntity<>(new BaseResponse(Constant.INVALID_TOKEN_MSG),
+                    HttpStatus.UNAUTHORIZED);
+        }
 
-        FileMetadata fileMetadata = fileService.deleteFile(fileId);
+        FileMetadata fileMetadata = fileService.deleteFile(fileId, username);
 
-        return new ResponseEntity<>(fileMetadata, HttpStatus.OK);
+        return new ResponseEntity<>(new GetFileResponse(fileMetadata), HttpStatus.OK);
     }
 }

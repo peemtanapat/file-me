@@ -55,8 +55,7 @@ public class FileService implements IFileService {
         try {
             Files.copy(file.getInputStream(),
                     ownerPath.resolve(file.getOriginalFilename()),
-                    StandardCopyOption.REPLACE_EXISTING
-            );
+                    StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             if (e instanceof FileAlreadyExistsException) {
                 throw new RuntimeException("A file of that name already exists.");
@@ -93,7 +92,6 @@ public class FileService implements IFileService {
 
         List<FileMetadata> fileMetadata = new ArrayList<>();
         for (File file : files) {
-//            long fileSizeMb = file.length() / (1024 * 1024);
             long fileSizeKb = file.length();
 
             String createdTime;
@@ -107,16 +105,16 @@ public class FileService implements IFileService {
             fileMetadata.add(new FileMetadata(file.getName(),
                     file.getAbsolutePath(),
                     createdTime,
-                    fileSizeKb)
-            );
+                    fileSizeKb));
         }
 
         return fileMetadata;
     }
 
     @Override
-    public FileMetadata deleteFile(String fileId) {
-        Path targetPath = root.resolve(fileId);
+    public FileMetadata deleteFile(String fileId, String owner) {
+        Path path = initDirectory(owner);
+        Path targetPath = path.resolve(fileId);
 
         try {
             File targetFile = targetPath.toFile();
