@@ -1,21 +1,46 @@
 import axios from 'axios'
-import { DELETE_FILE_URL, GET_FILES_URL, UPLOAD_FILES_URL } from '../constants'
+import {
+  DELETE_FILE_URL,
+  DOWNLOAD_FILE_URL,
+  GET_FILES_URL,
+  INVALID_TOKEN_MSG,
+  UPLOAD_FILES_URL,
+} from '../constants'
 import FormData from 'form-data'
 
-export const getAllFiles = async () => {
-  const res = await axios.get(GET_FILES_URL)
+let token = null
 
-  return res.data
+const setToken = (newToken) => {
+  token = `Bearer ${newToken}`
 }
 
-export const uploadFile = async ({ file }) => {
+const getAllFiles = async () => {
+  const config = {
+    headers: { Authorization: token },
+  }
+
+  try {
+    const res = await axios.get(GET_FILES_URL, config)
+    return res.data?.files
+  } catch (error) {
+    const resMessage = error.response?.data?.message
+    const isInvalidToken = resMessage && resMessage.includes(INVALID_TOKEN_MSG)
+    if (isInvalidToken) {
+      throw new Error(INVALID_TOKEN_MSG)
+    }
+    return null
+  }
+}
+
+const uploadFile = async ({ file }) => {
   const formData = new FormData()
   formData.append('file', file)
 
   try {
-    const res = await axios.post(UPLOAD_FILES_URL, formData, {
+    await axios.post(UPLOAD_FILES_URL, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
+        Authorization: token,
       },
     })
 
@@ -25,9 +50,25 @@ export const uploadFile = async ({ file }) => {
   }
 }
 
-export const deleteFile = async ({ file }) => {
+const getDownloadFileUrl = ({ file }) => {
+  return `${DOWNLOAD_FILE_URL}?fileId=${file.name}&token=${token}`
+}
+
+const deleteFile = async ({ file }) => {
+  const config = {
+    headers: { Authorization: token },
+  }
+
   const deleteFileUrl = `${DELETE_FILE_URL}?fileId=${file.name}`
-  const res = await axios.delete(deleteFileUrl)
+  const res = await axios.delete(deleteFileUrl, config)
 
   return res.data
+}
+
+export default {
+  setToken,
+  getAllFiles,
+  uploadFile,
+  getDownloadFileUrl,
+  deleteFile,
 }

@@ -1,8 +1,8 @@
 import { DELETE_FILE_CONFIRM_MSG, DOWNLOAD_FILE_URL } from '../constants'
-import { deleteFile } from '../services/fileService'
+import fileService from '../services/fileService'
 
 const FileRow = ({ file, index }) => {
-  const urlToDownload = `${DOWNLOAD_FILE_URL}?fileId=${file.name}`
+  const downloadUrl = fileService.getDownloadFileUrl({ file })
 
   const deleteFileHandler = async () => {
     const deleteConfirmMessage = DELETE_FILE_CONFIRM_MSG.replace(
@@ -10,7 +10,7 @@ const FileRow = ({ file, index }) => {
       file.name,
     )
     if (window.confirm(deleteConfirmMessage)) {
-      await deleteFile({ file })
+      await fileService.deleteFile({ file })
     }
   }
 
@@ -21,7 +21,7 @@ const FileRow = ({ file, index }) => {
       <th>{file.size}</th>
       <th>{file?.createdAt}</th>
       <th>
-        <a href={urlToDownload}>Download</a>
+        <a href={downloadUrl}>Download</a>
       </th>
       <th>
         <a href="" onClick={deleteFileHandler}>
