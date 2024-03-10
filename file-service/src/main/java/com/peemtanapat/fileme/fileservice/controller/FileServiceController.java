@@ -2,10 +2,12 @@ package com.peemtanapat.fileme.fileservice.controller;
 
 import com.peemtanapat.fileme.fileservice.Constant;
 import com.peemtanapat.fileme.fileservice.model.*;
-import com.peemtanapat.fileme.fileservice.service.FileService;
+import com.peemtanapat.fileme.fileservice.model.exception.FileDownloadException;
+import com.peemtanapat.fileme.fileservice.service.FileS3Service;
 import com.peemtanapat.fileme.fileservice.service.MailSenderAdapter;
 import com.peemtanapat.fileme.fileservice.util.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -14,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -21,13 +24,15 @@ import java.util.List;
 @RequestMapping("/files")
 public class FileServiceController {
 
-    private final FileService fileService;
+    @Value("${enable.mail.upload.notification}")
+    private boolean enableMailNotification;
+    private final FileS3Service fileService;
     private final MailSenderAdapter mailSenderAdapter;
     private JWTUtil jwtUtil = new JWTUtil();
 
     @Autowired
-    public FileServiceController(FileService fileService, MailSenderAdapter mailSenderAdapter) {
-        this.fileService = fileService;
+    public FileServiceController(FileS3Service fileS3Service, MailSenderAdapter mailSenderAdapter) {
+        this.fileService = fileS3Service;
         this.mailSenderAdapter = mailSenderAdapter;
     }
 
@@ -40,7 +45,7 @@ public class FileServiceController {
                     HttpStatus.UNAUTHORIZED);
         }
 
-        List<FileMetadata> files = fileService.getFiles(username);
+        List<FileMetadata> files = fileService.listFiles(username);
 
         return new ResponseEntity<>(new GetAllFilesResponse(files), HttpStatus.OK);
     }
@@ -56,14 +61,16 @@ public class FileServiceController {
 
         fileService.uploadFile(file, username);
 
-        mailSenderAdapter.notifyUploadFileSuccess(username, file.getOriginalFilename());
+        if (enableMailNotification) {
+            mailSenderAdapter.notifyUploadFileSuccess(username, file.getOriginalFilename());
+        }
 
         return new ResponseEntity<>(new UploadFileResponse(file.getOriginalFilename()), HttpStatus.OK);
     }
 
     @GetMapping(value = "/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<Resource> downloadFile(@RequestParam("token") String token,
-            @RequestParam("fileId") String fileId) {
+            @RequestParam("fileId") String fileId) throws IOException, FileDownloadException {
         String username = jwtUtil.getUsernameFromToken(token);
         if (username == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);

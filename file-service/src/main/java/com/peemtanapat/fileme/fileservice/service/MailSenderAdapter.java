@@ -15,24 +15,37 @@ import java.net.URISyntaxException;
 @Service
 public class MailSenderAdapter implements IMailSenderAdapter {
 
+    private final RestTemplate restTemplate = new RestTemplate();
+
     @Override
-    public ResponseEntity<Object> notifyUploadFileSuccess(String receiver, String filename) {
-        RestTemplate restTemplate = new RestTemplate();
+    public ResponseEntity<Object> notify(SendMailBody sendMailBody) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String body = Constant.UPLOAD_SUCCESS_BODY.replace("{{filename}}", filename);
-        SendMailBody sendMailBody = new SendMailBody(receiver, Constant.UPLOAD_SUCCESS_SUBJECT, body);
-        System.out.println("sendMailBody = " + sendMailBody);
         HttpEntity<SendMailBody> sendMailBodyEntity = new HttpEntity<>(sendMailBody, headers);
 
         try {
             URI uri = new URI(Constant.SEND_MAIL_URL);
             ResponseEntity<Object> response = restTemplate.postForEntity(uri, sendMailBodyEntity, Object.class);
-            System.out.println("response = " + response);
             return response;
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public ResponseEntity<Object> notifyUploadFileFail(String receiver, String filename) {
+        String body = Constant.UPLOAD_FAIL_BODY.replace("{{filename}}", filename);
+        SendMailBody sendMailBody = new SendMailBody(receiver, Constant.UPLOAD_FAIL_SUBJECT, body);
+
+        return notify(sendMailBody);
+    }
+
+    @Override
+    public ResponseEntity<Object> notifyUploadFileSuccess(String receiver, String filename) {
+        String body = Constant.UPLOAD_SUCCESS_BODY.replace("{{filename}}", filename);
+        SendMailBody sendMailBody = new SendMailBody(receiver, Constant.UPLOAD_SUCCESS_SUBJECT, body);
+
+        return notify(sendMailBody);
     }
 }
