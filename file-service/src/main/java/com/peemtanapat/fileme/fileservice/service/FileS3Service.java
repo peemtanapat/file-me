@@ -41,8 +41,8 @@ public class FileS3Service implements IFileService {
 
     @Autowired
     public FileS3Service(AmazonS3 s3Client, MailSenderAdapter mailSenderAdapter) {
-        log.debug("bucketName="  + bucketName);
-        log.debug("enableMailNotification="  + enableMailNotification);
+        log.debug("bucketName=" + bucketName);
+        log.debug("enableMailNotification=" + enableMailNotification);
         this.s3Client = s3Client;
         this.mailSenderAdapter = mailSenderAdapter;
     }
@@ -149,10 +149,9 @@ public class FileS3Service implements IFileService {
     public List<FileMetadata> listFiles(String owner) {
         List<FileMetadata> files = new ArrayList<>();
         String ownerFolderName = Base64Util.encode(owner) + "/";
-        ListObjectsV2Request listObjectsV2Request =
-                new ListObjectsV2Request()
-                        .withBucketName(bucketName)
-                        .withPrefix(ownerFolderName);
+        ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request()
+                .withBucketName(bucketName)
+                .withPrefix(ownerFolderName);
         ListObjectsV2Result objectListing = s3Client.listObjectsV2(listObjectsV2Request);
 
         for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {

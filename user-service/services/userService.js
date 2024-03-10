@@ -15,13 +15,12 @@ const saveNewUser = async ({ username }) => {
   // generate password
   const rawPassword = generateSecurePassword(12)
   const hashedPassword = await hashPassword(rawPassword)
-  console.log('%c⧭', 'color: #00a3cc', { rawPassword, hashedPassword })
+  console.log('%c⧭', 'color: #00a3cc', { username, rawPassword })
   // save user&password
   const newUser = new User({
     username,
     password: hashedPassword,
   })
-  console.log('%c⧭', 'color: #00e600', { newUser })
   const savedUser = await newUser.save()
 
   // send mail
