@@ -127,6 +127,11 @@ https://api.postman.com/collections/14305403-5eb1e3a5-e4aa-4912-ab7f-aea857da189
 
 ![image](_readme-src/feature-pool.png)
 
+### S3 Bucket Example
+
+![image](_readme-src/s3-bucket-example-first.png)
+![image](_readme-src/s3-bucket-example-inside-owner-subfolder.png)
+
 <!-- CONTACT -->
 
 ## Contact Me
