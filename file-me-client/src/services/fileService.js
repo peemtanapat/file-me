@@ -46,7 +46,12 @@ const uploadFile = async ({ file }) => {
 
     return ''
   } catch (error) {
-    return error?.response?.data?.message
+    const resMessage = error.response?.data?.message
+    const isInvalidToken = resMessage && resMessage.includes(INVALID_TOKEN_MSG)
+    if (isInvalidToken) {
+      throw new Error(INVALID_TOKEN_MSG)
+    }
+    return null
   }
 }
 
