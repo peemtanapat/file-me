@@ -19,9 +19,11 @@ const FileRow = ({ file, index }) => {
       <th>{index}</th>
       <th>{file.name}</th>
       <th>{file.size}</th>
-      <th>{file?.createdAt}</th>
+      <th>{file.createdAt}</th>
       <th>
-        <a href={downloadUrl}>Download</a>
+        <a href={downloadUrl} target="_blank" rel="noreferrer">
+          Download
+        </a>
       </th>
       <th>
         <a href="" onClick={deleteFileHandler}>

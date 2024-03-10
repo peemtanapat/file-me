@@ -1,5 +1,4 @@
 import FileRow from './FileRow'
-
 const FileList = ({ files }) => {
   return (
     <table>
@@ -19,7 +18,7 @@ const FileList = ({ files }) => {
             <FileRow
               key={index + file.name}
               file={file}
-              index={index}
+              index={++index}
             ></FileRow>
           ))}
       </tbody>

@@ -1,9 +1,9 @@
 require('dotenv').config({ path: __dirname + '/.env' })
 
-const PORT = 3000
+const PORT = process.env.PORT | 3000
 const MONGODB_URI = process.env.MONGODB_URI
 
-const SEND_MAIL_URL = 'http://localhost:8081/mail'
+const SEND_MAIL_URL = process.env.SEND_MAIL_URL
 const MAIL_NEW_ACCOUNT_SUBJECT = 'Welcome to file-me, you are our new member'
 const MAIL_NEW_ACCOUNT_BODY =
   'Here is your account: username: {{username}}  password: {{password}}'

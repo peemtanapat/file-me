@@ -35,7 +35,7 @@ public class FileServiceController {
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<BaseResponse> getAllFiles(
+    public ResponseEntity<?> listAllFiles(
             @RequestHeader(name = HttpHeaders.AUTHORIZATION) String token) {
         String username = jwtService.getUsernameFromToken(token);
         if (username == null) {
