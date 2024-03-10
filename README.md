@@ -93,6 +93,8 @@ Here are the main libraries/services used in this project.
 
 ![image](_readme-src/user-password-mail-example.png)
 
+![image](_readme-src/eureka-discovery.png)
+
 ### Architecture
 
 ![image](_readme-src/architecture-diagram.png)
