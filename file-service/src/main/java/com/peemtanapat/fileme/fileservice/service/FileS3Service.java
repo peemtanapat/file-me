@@ -4,9 +4,9 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import com.peemtanapat.fileme.fileservice.model.FileMetadata;
 import com.peemtanapat.fileme.fileservice.model.exception.FileDownloadException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Base64Util;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -25,15 +25,27 @@ import java.util.List;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class FileS3Service implements IFileService {
+
+    @Value("${enable.mail.upload.notification}")
+    private boolean enableMailNotification;
 
     @Value("${aws.bucket.name}")
     private String bucketName;
 
     private final AmazonS3 s3Client;
 
+    private final MailSenderAdapter mailSenderAdapter;
+
     private final Path root = Paths.get("downloads");
+
+    @Autowired
+    public FileS3Service(AmazonS3 s3Client, MailSenderAdapter mailSenderAdapter) {
+        log.debug("bucketName="  + bucketName);
+        log.debug("enableMailNotification="  + enableMailNotification);
+        this.s3Client = s3Client;
+        this.mailSenderAdapter = mailSenderAdapter;
+    }
 
     public void initDirectory() {
         try {
@@ -41,6 +53,7 @@ public class FileS3Service implements IFileService {
                 Files.createDirectories(root);
             }
         } catch (IOException e) {
+            log.error("initDirectory: " + e);
             throw new RuntimeException("Could not initialize directory for upload!");
         }
     }
@@ -55,6 +68,7 @@ public class FileS3Service implements IFileService {
             }
             return ownerPath;
         } catch (IOException e) {
+            log.error("initDirectory: " + e);
             throw new RuntimeException("Could not initialize directory for upload!");
         }
     }
@@ -65,37 +79,52 @@ public class FileS3Service implements IFileService {
 
     @Override
     public void uploadFile(MultipartFile multipartFile, String owner) {
+        boolean isFail = false;
+
         String filename = multipartFile.getOriginalFilename();
-        Path ownerPath = initDirectory(owner);
-        Path localFilePath = ownerPath.resolve(filename);
+        Path localFilePath = initDirectory(owner).resolve(filename);
         File localFile = localFilePath.toFile();
+
         try (FileOutputStream fileOutputStream = new FileOutputStream(localFile)) {
             fileOutputStream.write(multipartFile.getBytes());
+
+            String fullFilePath = getObjectPath(owner, filename);
+            PutObjectRequest request = new PutObjectRequest(bucketName, fullFilePath, localFile);
+
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentLength(localFile.length());
+            request.setMetadata(metadata);
+
+            s3Client.putObject(request);
         } catch (FileNotFoundException e) {
+            isFail = true;
+            log.error("uploadFile: " + e);
             throw new RuntimeException(e);
         } catch (IOException e) {
+            isFail = true;
+            log.error("uploadFile: " + e);
             throw new RuntimeException(e);
+        } finally {
+            if (enableMailNotification) {
+                if (isFail) {
+                    mailSenderAdapter.notifyUploadFileFail(owner, localFile);
+                } else {
+                    mailSenderAdapter.notifyUploadFileSuccess(owner, localFile);
+                }
+            }
         }
-
-        String fullFilePath = getObjectPath(owner, filename);
-        PutObjectRequest request = new PutObjectRequest(bucketName, fullFilePath, localFile);
-
-        ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentLength(localFile.length());
-        request.setMetadata(metadata);
-
-        s3Client.putObject(request);
 
         localFile.delete();
     }
 
     @Override
     public Resource downloadFile(String fileId, String owner) throws IOException, FileDownloadException {
-        Path ownerPath = initDirectory(owner);
-        Path localFilePath = ownerPath.resolve(fileId);
-        System.out.println("localFilePath = " + localFilePath);
+        Path localFilePath = initDirectory(owner).resolve(fileId);
+        log.debug("localFilePath=" + localFilePath);
+
         String fullFilePath = getObjectPath(owner, fileId);
         S3Object object = s3Client.getObject(bucketName, fullFilePath);
+
         try (S3ObjectInputStream objectInputStream = object.getObjectContent()) {
             try (FileOutputStream fileOutputStream = new FileOutputStream(localFilePath.toFile())) {
                 byte[] read_buf = new byte[1024];
@@ -107,8 +136,10 @@ public class FileS3Service implements IFileService {
 
             Resource resource = new UrlResource(localFilePath.toUri());
             if (resource.exists() || resource.isReadable()) {
+                log.debug("download file success: " + fileId + " " + owner);
                 return resource;
             } else {
+                log.error("Download File Error: file not found! " + fileId + " " + owner);
                 throw new FileDownloadException("Download File Error: file not found!");
             }
         }

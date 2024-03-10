@@ -18,10 +18,4 @@ public final class Constant {
 
     public final static String INVALID_TOKEN_MSG = "invalid token";
 
-    // TODO: mock
-    public final static String OWNER1 = "pm.tanapat@gmail.com";
-    public final static String OWNER2 = "tanapat.pm@gmail.com";
-    public final static String OWNER3 = "pronsawan.dp@gmail.com";
-    public final static String CURRENT_OWNER = OWNER2;
-
 }

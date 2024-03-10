@@ -4,10 +4,9 @@ import com.peemtanapat.fileme.fileservice.Constant;
 import com.peemtanapat.fileme.fileservice.model.*;
 import com.peemtanapat.fileme.fileservice.model.exception.FileDownloadException;
 import com.peemtanapat.fileme.fileservice.service.FileS3Service;
+import com.peemtanapat.fileme.fileservice.service.JWTService;
 import com.peemtanapat.fileme.fileservice.service.MailSenderAdapter;
-import com.peemtanapat.fileme.fileservice.util.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,22 +23,21 @@ import java.util.List;
 @RequestMapping("/files")
 public class FileServiceController {
 
-    @Value("${enable.mail.upload.notification}")
-    private boolean enableMailNotification;
     private final FileS3Service fileService;
     private final MailSenderAdapter mailSenderAdapter;
-    private JWTUtil jwtUtil = new JWTUtil();
+    private JWTService jwtService;
 
     @Autowired
-    public FileServiceController(FileS3Service fileS3Service, MailSenderAdapter mailSenderAdapter) {
+    public FileServiceController(FileS3Service fileS3Service, MailSenderAdapter mailSenderAdapter, JWTService jwtService) {
         this.fileService = fileS3Service;
         this.mailSenderAdapter = mailSenderAdapter;
+        this.jwtService = jwtService;
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<BaseResponse> getAllFiles(
             @RequestHeader(name = HttpHeaders.AUTHORIZATION) String token) {
-        String username = jwtUtil.getUsernameFromToken(token);
+        String username = jwtService.getUsernameFromToken(token);
         if (username == null) {
             return new ResponseEntity<>(new BaseResponse(Constant.INVALID_TOKEN_MSG),
                     HttpStatus.UNAUTHORIZED);
@@ -53,7 +51,7 @@ public class FileServiceController {
     @PostMapping(value = "/upload", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<BaseResponse> uploadFile(@RequestHeader(name = HttpHeaders.AUTHORIZATION) String token,
             @RequestParam("file") MultipartFile file) {
-        String username = jwtUtil.getUsernameFromToken(token);
+        String username = jwtService.getUsernameFromToken(token);
         if (username == null) {
             return new ResponseEntity<>(new BaseResponse(Constant.INVALID_TOKEN_MSG),
                     HttpStatus.UNAUTHORIZED);
@@ -61,22 +59,18 @@ public class FileServiceController {
 
         fileService.uploadFile(file, username);
 
-        if (enableMailNotification) {
-            mailSenderAdapter.notifyUploadFileSuccess(username, file.getOriginalFilename());
-        }
-
         return new ResponseEntity<>(new UploadFileResponse(file.getOriginalFilename()), HttpStatus.OK);
     }
 
     @GetMapping(value = "/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<Resource> downloadFile(@RequestParam("token") String token,
             @RequestParam("fileId") String fileId) throws IOException, FileDownloadException {
-        String username = jwtUtil.getUsernameFromToken(token);
+        String username = jwtService.getUsernameFromToken(token);
         if (username == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
-        Resource resource = fileService.downloadFile(fileId, Constant.CURRENT_OWNER);
+        Resource resource = fileService.downloadFile(fileId, username);
 
         HttpHeaders header = new HttpHeaders();
         header.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileId);
@@ -90,7 +84,7 @@ public class FileServiceController {
     @DeleteMapping(value = "/delete", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<BaseResponse> deleteFile(@RequestHeader(name = HttpHeaders.AUTHORIZATION) String token,
             @RequestParam("fileId") String fileId) {
-        String username = jwtUtil.getUsernameFromToken(token);
+        String username = jwtService.getUsernameFromToken(token);
         if (username == null) {
             return new ResponseEntity<>(new BaseResponse(Constant.INVALID_TOKEN_MSG),
                     HttpStatus.UNAUTHORIZED);

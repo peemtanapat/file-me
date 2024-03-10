@@ -36,3 +36,5 @@ build/
 
 ### uploads folder ###
 /uploads
+/downloads
+/logs
