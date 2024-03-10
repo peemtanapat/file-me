@@ -24,7 +24,7 @@ public class JWTService implements Serializable {
         try {
             Jws<Claims> claims = Jwts.parser()
                     .setSigningKey(jwtSecret.getBytes())
-                    .parseClaimsJws(token);
+                    .build().parseSignedClaims(token);
 
             log.debug("Token verification successful");
             return claims;
