@@ -27,9 +27,11 @@
       <ul>
         <li><a href="#built-with">Built With</a></li>
         <li><a href="#requirements">Requirements</a></li>
+        <li><a href="#web-demo">Web Demo</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#functional-features">Functional Features</a></li>
       </ul>
     </li>
-    <li><a href="#functional-features">Functional Features</a><li>
     <li><a href="#postman-collection">Postman Collection</a></li>
     <li><a href="#feature-pool">Feature Pool</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -79,6 +81,22 @@ Here are the main libraries/services used in this project.
    - [x] RESTful API
    - [x] Postman Collection
 
+### Web Demo
+
+![image](_readme-src/user-journey.png)
+
+<video width="320" height="240" controls>
+  <source src="_readme-src/demo-file-me.mov" type="video/mp4">
+</video>
+
+![image](_readme-src/file-upload-success-example.png)
+
+![image](_readme-src/user-password-mail-example.png)
+
+### Architecture
+
+![image](_readme-src/architecture-diagram.png)
+
 ### Functional Features
 
 1. File Management
@@ -100,6 +118,10 @@ Here are the main libraries/services used in this project.
 ### Postman Collection
 
 https://api.postman.com/collections/14305403-5eb1e3a5-e4aa-4912-ab7f-aea857da1896?access_key=PMAT-01HRMEHT5V1XDVVQWXSQWNRTWG
+
+### Feature Pool
+
+![image](_readme-src/feature-pool.png)
 
 <!-- CONTACT -->
 
