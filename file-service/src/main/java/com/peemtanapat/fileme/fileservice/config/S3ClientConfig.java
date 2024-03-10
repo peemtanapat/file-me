@@ -15,9 +15,14 @@ public class S3ClientConfig {
 
     @Value("${aws.accessKey}")
     private String accessKey;
-
     @Value("${aws.secretKey}")
     private String secretKey;
+
+    public S3ClientConfig(@Value("${aws.secretKey}") String accessKey,
+                          @Value("${aws.accessKey}") String secretKey) {
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
+    }
 
     @Bean
     public AmazonS3 initS3Client() {

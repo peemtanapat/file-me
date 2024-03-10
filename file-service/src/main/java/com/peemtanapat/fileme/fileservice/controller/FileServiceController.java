@@ -5,8 +5,8 @@ import com.peemtanapat.fileme.fileservice.model.*;
 import com.peemtanapat.fileme.fileservice.model.exception.FileDownloadException;
 import com.peemtanapat.fileme.fileservice.service.FileS3Service;
 import com.peemtanapat.fileme.fileservice.service.JWTService;
-import com.peemtanapat.fileme.fileservice.service.MailSenderAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,13 +24,11 @@ import java.util.List;
 public class FileServiceController {
 
     private final FileS3Service fileService;
-    private final MailSenderAdapter mailSenderAdapter;
-    private JWTService jwtService;
+    private final JWTService jwtService;
 
     @Autowired
-    public FileServiceController(FileS3Service fileS3Service, MailSenderAdapter mailSenderAdapter, JWTService jwtService) {
+    public FileServiceController(FileS3Service fileS3Service, JWTService jwtService) {
         this.fileService = fileS3Service;
-        this.mailSenderAdapter = mailSenderAdapter;
         this.jwtService = jwtService;
     }
 
@@ -52,6 +50,7 @@ public class FileServiceController {
     public ResponseEntity<BaseResponse> uploadFile(@RequestHeader(name = HttpHeaders.AUTHORIZATION) String token,
             @RequestParam("file") MultipartFile file) {
         String username = jwtService.getUsernameFromToken(token);
+//        String username = "tanapat.pm@gmail.com";
         if (username == null) {
             return new ResponseEntity<>(new BaseResponse(Constant.INVALID_TOKEN_MSG),
                     HttpStatus.UNAUTHORIZED);
