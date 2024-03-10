@@ -85,6 +85,8 @@ Here are the main libraries/services used in this project.
 
 ![image](_readme-src/user-journey.png)
 
+see video demo 👉 [demo-file-me.mov](https://github.com/peemtanapat/file-me/blob/main/_readme-src/demo-file-me.mov)
+
 <video width="320" height="240" controls>
   <source src="_readme-src/demo-file-me.mov" type="video/mp4">
 </video>
