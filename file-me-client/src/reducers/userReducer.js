@@ -15,6 +15,16 @@ const userSlice = createSlice({
 
 export const { setLoggedUser } = userSlice.actions
 
+export const verifyUser = ({ username }) => {
+  return async (dispatch) => {
+    try {
+      await userService.verifyUser({ username })
+    } catch (error) {
+      console.log(`Error Verify User: ${error}`)
+    }
+  }
+}
+
 export const loginUser = ({ username, password }) => {
   return async (dispatch) => {
     try {
